@@ -42,13 +42,14 @@ export const sendMessage = createAsyncThunk(
 
     dispatch(setInput(""));
 
-    const sessionId = await fetch("http://localhost:8000/prompt", {
+    const baseUrl = import.meta.env.VITE_BACKEND_CORS_ORIGINS;
+    const sessionId = await fetch(`${baseUrl}/prompt`, {
       method: "POST",
       body: JSON.stringify({ prompt }),
       headers: { "Content-Type": "application/json" }
     }).then(res => res.json()).then(data => data.session_id);
 
-    const eventSource = new EventSource(`http://localhost:8000/conversation?session_id=${sessionId}`);
+    const eventSource = new EventSource(`${baseUrl}/conversation?session_id=${sessionId}`);
 
     eventSource.onmessage = (event) => {
       dispatch(appendToMessageWithId({ id: botMsgId, chunk: event.data }));
