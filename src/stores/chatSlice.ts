@@ -55,6 +55,14 @@ export const sendMessage = createAsyncThunk(
       dispatch(appendToMessageWithId({ id: botMsgId, chunk: event.data }));
     };
 
+    eventSource.onopen = () => {
+      console.log("SSE connection open");
+    };
+
+    eventSource.onerror = () => {
+      console.log("SSE error or timeout");
+    };
+
     eventSource.addEventListener("end", () => {
       eventSource.close();
     });
