@@ -11,11 +11,13 @@ interface Message {
 interface ChatState {
   input: string;           // input prompt text
   messages: Message[];     // chat history
+  thinking: boolean
 }
 
 const initialState: ChatState = {
   input: '',
   messages: [],
+  thinking: false,
 };
 
 export const sendMessage = createAsyncThunk(
@@ -51,7 +53,9 @@ export const sendMessage = createAsyncThunk(
 
     const eventSource = new EventSource(`${baseUrl}/conversation?session_id=${sessionId}`);
 
+    dispatch(setThinking(true));
     eventSource.onmessage = (event) => {
+      dispatch(setThinking(false));
       dispatch(appendToMessageWithId({ id: botMsgId, chunk: event.data }));
     };
 
@@ -91,6 +95,9 @@ const chatSlice = createSlice({
     clearMessages: (state) => {
       state.messages = [];
     },
+    setThinking(state, action: PayloadAction<boolean>) {
+      state.thinking = action.payload;
+    },
   },
 });
 
@@ -99,6 +106,7 @@ export const {
   addMessage,
   appendToMessageWithId,
   clearMessages,
+  setThinking
 } = chatSlice.actions;
 
 export default chatSlice.reducer;
