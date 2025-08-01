@@ -53,26 +53,28 @@ export const sendMessage = createAsyncThunk(
 
     // when conversation service is not up we need to wait and set thinking state here
     dispatch(setThinking(true));
-    const eventSource = new EventSource(`${baseUrl}/conversation?session_id=${sessionId}`);
+    await conversationTask(baseUrl, sessionId, botMsgId, dispatch);
+  }
+);
+
+const conversationTask = async (baseUrl: string, sessionId: string, botMsgId: string, dispatch: any) => {
+  const eventSource = new EventSource(`${baseUrl}/conversation?session_id=${sessionId}`);
 
     eventSource.onmessage = (event) => {
       dispatch(setThinking(false));
       dispatch(appendToMessageWithId({ id: botMsgId, chunk: event.data }));
     };
 
-    eventSource.onopen = () => {
-      console.log("SSE connection open");
-    };
-
-    eventSource.onerror = () => {
-      console.log("SSE error or timeout");
-    };
-
     eventSource.addEventListener("end", () => {
       eventSource.close();
     });
-  }
-);
+
+    eventSource.onerror = (err) => {
+      console.error(err);
+      eventSource.close();
+      dispatch(setThinking(false));
+    };
+};
 
 const chatSlice = createSlice({
   name: 'chat',
