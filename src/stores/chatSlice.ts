@@ -44,6 +44,9 @@ export const sendMessage = createAsyncThunk(
 
     dispatch(setInput(""));
 
+    // when conversation service is not up we need to wait and set thinking state here
+    dispatch(setThinking(true));
+
     const baseUrl = import.meta.env.VITE_BACKEND_CORS_ORIGINS;
     const sessionId = await fetch(`${baseUrl}/prompt`, {
       method: "POST",
@@ -51,8 +54,6 @@ export const sendMessage = createAsyncThunk(
       headers: { "Content-Type": "application/json" }
     }).then(res => res.json()).then(data => data.session_id);
 
-    // when conversation service is not up we need to wait and set thinking state here
-    dispatch(setThinking(true));
     await conversationTask(baseUrl, sessionId, botMsgId, dispatch);
   }
 );
