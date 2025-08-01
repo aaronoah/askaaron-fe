@@ -58,22 +58,25 @@ export const sendMessage = createAsyncThunk(
 );
 
 const conversationTask = async (baseUrl: string, sessionId: string, botMsgId: string, dispatch: any) => {
-  const eventSource = new EventSource(`${baseUrl}/conversation?session_id=${sessionId}`);
+  // TypeScript or JS in main thread
+  const worker = new Worker(new URL('../utils/sseWorker.ts', import.meta.url), { type: 'module' });
 
-    eventSource.onmessage = (event) => {
+  worker.postMessage({ type: 'start', url: `${baseUrl}/conversation?session_id=${sessionId}` });
+
+  worker.onmessage = (event) => {
+    const { type, data } = event.data;
+
+    if (type === 'message') {
       dispatch(setThinking(false));
-      dispatch(appendToMessageWithId({ id: botMsgId, chunk: event.data }));
-    };
-
-    eventSource.addEventListener("end", () => {
-      eventSource.close();
-    });
-
-    eventSource.onerror = (err) => {
-      console.error(err);
-      eventSource.close();
+      dispatch(appendToMessageWithId({ id: botMsgId, chunk: event.data.data }));
+    } else if (type === 'error') {
+      console.error("SSE Error:", data);
+    } else if (type === 'closed') {
+      console.log("SSE connection closed");
       dispatch(setThinking(false));
-    };
+      worker.terminate();
+    }
+  };
 };
 
 const chatSlice = createSlice({
