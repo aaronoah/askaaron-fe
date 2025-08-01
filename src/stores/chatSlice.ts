@@ -51,9 +51,10 @@ export const sendMessage = createAsyncThunk(
       headers: { "Content-Type": "application/json" }
     }).then(res => res.json()).then(data => data.session_id);
 
+    // when conversation service is not up we need to wait and set thinking state here
+    dispatch(setThinking(true));
     const eventSource = new EventSource(`${baseUrl}/conversation?session_id=${sessionId}`);
 
-    dispatch(setThinking(true));
     eventSource.onmessage = (event) => {
       dispatch(setThinking(false));
       dispatch(appendToMessageWithId({ id: botMsgId, chunk: event.data }));
